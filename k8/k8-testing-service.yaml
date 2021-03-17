@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fhir-testing
+spec:
+  type: LoadBalancer
+  selector:
+    app: fhir-testing
+  ports:
+  # list the FHIR datastore port first, some scripts may only look for the "first" port
+  - protocol: TCP
+    name: "fhir-testing"
+    port: 3000
+    targetPort: 3000

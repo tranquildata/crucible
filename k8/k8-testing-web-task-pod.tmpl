@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-web
+  labels:
+    app: fhir-testing
+spec:
+  containers:
+  - name: test-web
+    image: fhir-test:latest
+    imagePullPolicy: Never
+    command: ['/crucible/bin/docker-start-web.sh', '3000']
+    volumeMounts:
+    - name: crucible-storage
+      mountPath: /crucible
+    - name: crucible-tmp
+      mountPath: /crucible/tmp
+    - name: crucible-vendor
+      mountPath: /crucible/vendor
+    env:
+    - name: MONGODB_HOST
+      value: $(MONGODB_SERVICE_HOST):$(MONGODB_SERVICE_PORT)
+  - name: test-task
+    image: fhir-test:latest
+    imagePullPolicy: Never
+    command: ["/crucible/bin/docker-start-tasks.sh", "$(FHIR_TESTING_SERVICE_HOST)", "$(FHIR_TESTING_SERVICE_PORT)"]
+    volumeMounts:
+    - name: crucible-storage
+      mountPath: /crucible
+    env:
+    - name: MONGODB_HOST
+      value: $(MONGODB_SERVICE_HOST):$(MONGODB_SERVICE_PORT)
+  volumes:
+  - name: crucible-storage
+    hostPath:
+      path: $VOLDIR
+  - name: crucible-tmp
+    hostPath:
+      path: $VOLDIR/rails_tmp
+  - name: crucible-vendor
+    hostPath:
+      path: $VOLDIR/rails_vendor

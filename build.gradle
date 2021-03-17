@@ -1,0 +1,33 @@
+task buildDockerImage(type:Exec) {
+  commandLine = ["docker", "build", "-t", "fhir-test", "${projectDir}"]
+}
+
+task evaluateTemplates(type: Exec) {
+  workingDir "${projectDir}/k8"
+  commandLine = ["${projectDir}/make-yamls.sh", "${projectDir}"]
+}
+
+task startServices(type: Exec, dependsOn: [evaluateTemplates, buildDockerImage]) {
+  commandLine = ["kubectl", "apply", "-f", "${projectDir}/k8/k8-mongo-service.yaml", "-f", "${projectDir}/k8/k8-testing-service.yaml"]
+}
+
+task startPods(type: Exec, dependsOn: startServices) {
+  commandLine = ["kubectl", "apply", "-f", "${projectDir}/k8/k8-mongo-pod.yaml", "-f", "${projectDir}/k8/k8-testing-web-task-pod.yaml"]
+}
+
+task startComplianceTestingServer(dependsOn: startPods) {
+  doLast {
+    print "After 30 seconds or so, server should be available on http://localhost:3000, but it will take a while to load"
+  }
+}
+
+task stopPods(type: Exec) {
+  commandLine = ["kubectl", "delete", "pod", "test-web", "mongodb"]
+}
+
+task stopServices(type:Exec, dependsOn: stopPods) {
+  commandLine = ["kubectl" , "delete", "service", "mongodb", "fhir-testing"]
+}
+
+task stopComplianceTestingServer(dependsOn: stopServices) {
+}
